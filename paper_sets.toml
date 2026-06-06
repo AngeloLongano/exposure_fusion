@@ -1,0 +1,60 @@
+[[sets]]
+name = "venice_boat"
+title = "Venice Boat"
+kind = "fusion"
+description = "Exposure-bracketed Venice boat sequence used to demonstrate the complete fusion pipeline."
+input_dir = "images/venice_boat"
+inputs = [
+    "image1.jpg",
+    "image2.jpg",
+    "image3.jpg",
+]
+reference = "result.jpg"
+output_dir = "images/venice_boat/out"
+
+[[sets]]
+name = "venice_carnival"
+title = "Venice Carnival"
+kind = "fusion"
+description = "Masked carnival figure in Piazza San Marco, used for the notebook implementation and reference comparison."
+input_dir = "images/venice_carnival"
+inputs = [
+    "A.jpg",
+    "B.jpg",
+    "C.jpg",
+]
+reference = "result.jpg"
+output_dir = "images/venice_carnival/out"
+
+[[sets]]
+name = "pyramid_blending"
+title = "Pyramid Blending Explanation"
+kind = "explanation"
+description = "Paper figures used to explain Gaussian weight pyramids, Laplacian image pyramids, and multi-scale blending."
+input_dir = "images/pyramid_blending"
+output_dir = "images/pyramid_blending/out"
+pyramid_inputs = [
+    "image-011.png",
+    "image-031.png",
+]
+notes = "This set is not run as a normal exposure stack yet; it is reserved for document figures explaining the pyramid construction."
+
+[[sets]]
+name = "living_room_window"
+title = "Living Room Window"
+kind = "fusion"
+description = "Four-image indoor exposure-bracketed sequence with a bright window and dark room details."
+input_dir = "images/living_room_window"
+inputs = [
+    "input_1_dark.jpg",
+    "input_2_medium_dark.jpg",
+    "input_3_medium_bright.jpg",
+    "input_4_bright.jpg",
+]
+reference = "paper_fused.jpg"
+output_dir = "images/living_room_window/out"
+comparison_images = [
+    "comparison_1.jpg",
+    "comparison_2.jpg",
+    "comparison_3.jpg",
+]
