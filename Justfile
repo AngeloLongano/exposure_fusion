@@ -60,6 +60,35 @@ process-living-room-window:
         --only-process \
         --preview
 
+fuse-iphone-example:
+    uv run python main.py \
+        --inputs images/iphone_example/input_dark.jpg images/iphone_example/input_medium.jpg  images/iphone_example/input_bright.jpg \
+        --output-dir images/iphone_example/out \
+        --save-all \
+        --preview
+
+process-iphone-example:
+    uv run python main.py \
+        --inputs images/iphone_example/input_dark.jpg images/iphone_example/input_medium.jpg  images/iphone_example/input_bright.jpg \
+        --output-dir images/iphone_example/out \
+        --only-process \
+        --preview
+
+fuse-iphone-example-2:
+    uv run python main.py \
+        --inputs images/iphone_example_2/input_dark.jpg images/iphone_example_2/input_medium.jpg  images/iphone_example_2/input_bright.jpg \
+        --output-dir images/iphone_example_2/out \
+        --reference images/iphone_example_2/original_hdr.jpg \
+        --save-all \
+        --preview
+
+process-iphone-example-2:
+    uv run python main.py \
+        --inputs images/iphone_example_2/input_dark.jpg images/iphone_example_2/input_medium.jpg  images/iphone_example_2/input_bright.jpg \
+        --output-dir images/iphone_example_2/out \
+        --only-process \
+        --preview
+
 pyramids-pyramid-blending:
     uv run python main.py \
         --inputs images/pyramid_blending/image-011.png images/pyramid_blending/image-031.png \
@@ -82,6 +111,12 @@ paper-assets:
     just fuse-living-room-window
     just process-living-room-window
     just process-pyramid-blending
+
+    # The iPhone examples are not included in the paper since they are not as visually interesting as the other examples, but we can still generate the results for them.
+    # just fuse-iphone-example
+    # just process-iphone-example
+    # just fuse-iphone-example-2
+    # just process-iphone-example-2
 
 paper-pdf:
     pandoc paper.md --pdf-engine=xelatex -V documentclass=article -V geometry:margin=2.5cm -o paper.pdf

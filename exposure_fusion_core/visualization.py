@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-from exposure_fusion.pyramids import build_gaussian_pyramid, build_laplacian_pyramid
+from exposure_fusion_core.pyramids import build_gaussian_pyramid, build_laplacian_pyramid
 
 
 def normalized_for_display(image: np.ndarray) -> np.ndarray:

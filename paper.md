@@ -169,11 +169,11 @@ e implementazione.
 
 | Concetto | Ruolo nell'algoritmo | Implementazione |
 |---|---|---|
-| Misure di qualità | Contrasto, saturazione, well-exposedness | `exposure_fusion/weights.py`, `quality_measures` |
+| Misure di qualità | Contrasto, saturazione, well-exposedness | `exposure_fusion_core/weights.py`, `quality_measures` |
 | Formula dei pesi | Prodotto $C^{\omega_C} S^{\omega_S} E^{\omega_E}$ | `weight_map` |
 | Normalizzazione | Somma pixel-wise dei pesi pari a 1 | `normalize_weights` |
-| Piramidi | Decomposizione Gaussiana e Laplaciana | `exposure_fusion/pyramids.py` |
-| Fusione | Blending livello per livello | `exposure_fusion/fusion.py`, `fuse_exposures` |
+| Piramidi | Decomposizione Gaussiana e Laplaciana | `exposure_fusion_core/pyramids.py` |
+| Fusione | Blending livello per livello | `exposure_fusion_core/fusion.py`, `fuse_exposures` |
 
 L'interfaccia principale è `fuse_exposures`. La funzione riceve una lista di
 immagini RGB con la stessa shape, caricate come array NumPy in virgola mobile
@@ -336,10 +336,11 @@ ridurre piccoli drift numerici dovuti al filtraggio e al ridimensionamento.
 
 # Dataset e risultati
 
-Gli esperimenti documentati usano i gruppi di immagini dichiarati in
-`paper_sets.toml`: tre dataset di fusione (`venice_boat`, `venice_carnival` e
-`living_room_window`) e un dataset di supporto per spiegare la costruzione delle
-piramidi (`pyramid_blending`). Gli output sono salvati nelle rispettive cartelle
+Gli esperimenti documentati nel paper usano tre dataset di fusione
+(`venice_boat`, `venice_carnival` e `living_room_window`) e un dataset di
+supporto per spiegare la costruzione delle piramidi (`pyramid_blending`). La
+configurazione in `paper_sets.toml` contiene anche esempi personali opzionali
+non discussi nella relazione. Gli output sono salvati nelle rispettive cartelle
 `out/`, in modo da mantenere separati input originali e artefatti generati.
 
 ## Venice Boat
@@ -519,5 +520,5 @@ esponenti $\omega$ sulla qualità finale.
 
 - T. Mertens, J. Kautz, F. Van Reeth, *Exposure Fusion*, Proceedings of the 15th Pacific Conference on Computer Graphics and Applications (Pacific Graphics), 2007.
 - `exposure-fusion.pdf`, copia del paper di riferimento inclusa nel repository.
-- `sample.ipynb`, notebook di studio e sperimentazione dell'algoritmo.
-- `exposure_fusion/`, package Python riusabile dell'implementazione.
+- `exposure_fusion_study.ipynb`, notebook di studio e implementazione guidata dell'algoritmo.
+- `exposure_fusion_core/`, package Python riusabile dell'implementazione.

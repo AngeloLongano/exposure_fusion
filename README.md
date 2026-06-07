@@ -1,100 +1,138 @@
-# Exposure Fusion: Study and Implementation
+# Exposure Fusion: studio e implementazione
 
-This repository contains the study and **Python** implementation of the **Exposure Fusion** technique, an image fusion algorithm that produces high-quality results without requiring the estimation or mapping of the Camera Response Function (CRF), a typical requirement for traditional High Dynamic Range (HDR) techniques.
+Repository per lo studio e l'implementazione in Python dell'algoritmo
+**Exposure Fusion** di Tom Mertens, Jan Kautz e Frank Van Reeth.
 
-***
+L'obiettivo e mostrare il procedimento algoritmico in modo esplicito: calcolo
+delle mappe di peso, normalizzazione, costruzione delle piramidi Gaussiane e
+Laplaciane, fusione multirisoluzione e ricostruzione dell'immagine finale.
 
-### 🎯 Project Objective
+## File principali
 
-The main activity focused on faithfully reproducing the algorithm described in the academic paper:
+- `exposure_fusion_study.ipynb`: notebook principale da usare per presentare lo
+  studio e l'implementazione. Usa il caso `venice_carnival`, scelto perche nel
+  materiale del paper sono presenti anche le mappe dei pesi di riferimento.
+- `exposure_fusion_core/`: package Python con l'implementazione riusabile.
+- `main.py`: entry point CLI che richiama `exposure_fusion_core.cli`.
+- `paper.md` e `paper.pdf`: relazione tecnica in formato Markdown/PDF.
+- `paper_sets.toml`: descrizione dei dataset usati per paper e artefatti.
+- `Justfile`: comandi di sviluppo per rigenerare risultati, asset e PDF.
 
-> **"Exposure Fusion"**
-> *by Tom Mertens, Jan Kautz, and Frank Van Reeth*
+I notebook storici `sample.ipynb` ed `exposure_fusion_clean.ipynb`, se presenti,
+sono materiale intermedio e non sono l'entry point consigliato.
 
-The primary goal was to implement the method in a **Python notebook** (`sample.ipynb`) to analyze each step of the process in detail and verify the algorithm's effectiveness on source images.
+## Setup
 
-***
+Il progetto usa `uv` per gestire ambiente e dipendenze.
 
-### 🚀 Getting Started
+```bash
+uv venv
+source .venv/bin/activate
+uv sync
+```
 
-This project uses `uv` for Python package management and `pyproject.toml` to define dependencies.
+Per generare `paper.pdf` servono anche `pandoc` e una distribuzione LaTeX con
+`xelatex` disponibile nel `PATH`.
 
-1. **Install `uv` (if not already present):**
-    To use this project, you first need the `uv` installer.
-    *(If you do not have `uv` installed, run:)*
+## Eseguire il notebook
 
-    ```bash
-    pip install uv
-    ```
+Per aprire il notebook principale:
 
-    If you want use other way to install uv, visit [uv docs](https://docs.astral.sh/uv/getting-started/installation).
+```bash
+uv run jupyter lab exposure_fusion_study.ipynb
+```
 
-2. **Clone the repository:**
+Il notebook e pensato per essere letto ed eseguito dall'inizio alla fine. Le
+funzioni principali sono riscritte dentro il notebook per rendere chiaro il
+percorso implementativo, invece di usare il package come black box.
 
-    ```bash
-    git clone https://github.com/AngeloLongano/exposure_fusion.git
-    cd exposure_fusion
-    ```
+## Eseguire l'implementazione da CLI
 
-3. **Create and activate a virtual environment:**
-    It is recommended to use `uv` to create the environment.
+Esempio diretto su `venice_carnival`:
 
-    ```bash
-    # Create the virtual environment (in the .venv folder)
-    uv venv
-    
-    # Activate the environment
-    # (macOS/Linux)
-    source .venv/bin/activate
-    # (Windows)
-    # .venv\Scripts\activate
-    ```
+```bash
+uv run python main.py \
+  --inputs images/venice_carnival/A.jpg images/venice_carnival/B.jpg images/venice_carnival/C.jpg \
+  --reference images/venice_carnival/result.jpg \
+  --output-dir images/venice_carnival/out \
+  --save-all \
+  --save-process \
+  --preview
+```
 
-4. **Install dependencies:**
-    The `uv sync` command will read the `pyproject.toml` file and install all necessary packages.
+La CLI salva, a seconda delle opzioni:
 
-    ```bash
-    uv sync
-    ```
+- input LDR in `out/ldr/`;
+- mappe dei pesi in `out/weights/`;
+- risultato finale `fused_image.jpg`;
+- confronto con riferimento `comparison.jpg`;
+- diagramma del processo `process_diagram.jpg`;
+- anteprime aggregate quando si usa `--preview`.
 
-5. **Run the Notebook:**
-    Open the `sample.ipynb` file (e.g., with VS Code or Jupyter Lab) and ensure you select the Python interpreter (kernel) from the newly created `.venv` environment.
+## Comandi Just utili
 
-***
+Elenco completo:
 
-### ⚙️ Methodology and Technical Details
+```bash
+just --list
+```
 
-Exposure Fusion is an image processing method that combines a sequence of images captured at different exposures (Exposure Bracketing) into a single, well-exposed, and high-contrast image.
+Esecuzione dei dataset principali:
 
-The implementation is based on the following fundamental steps:
+```bash
+just fuse-venice-carnival
+just process-venice-carnival
 
-1. **Weight Map Calculation:** A weight map is calculated for each input image based on three key metrics that evaluate the "quality" of the exposure at each pixel:
-    * **Contrast:** Favors areas with high local variation.
-    * **Saturation:** Rewards vivid and non-faded colors.
-    * **Well-Exposedness:** Assigns higher weights to pixels with intermediate intensity values (neither too dark nor too bright), using a Gaussian curve centered at 0.5.
+just fuse-venice-boat
+just process-venice-boat
 
-2. **Normalization:** The weight maps are normalized pixel by pixel, ensuring that the sum of weights for each pixel across all images equals 1.
+just fuse-living-room-window
+just process-living-room-window
+```
 
-3. **Multi-Scale Fusion (Pyramid Blending):** To avoid visual artifacts (such as halos), the fusion is performed in pyramid space:
-    * A **Gaussian Pyramid** is built for each of the (normalized) weight maps.
-    * A **Laplacian Pyramid** is built for each of the source images.
-    * The Laplacian pyramids of the images are combined (blended) using the Gaussian pyramids of the weights.
+Rigenerare tutte le immagini necessarie al PDF:
 
-4. **Reconstruction (Pyramid Collapse):** The resulting combined Laplacian pyramid is collapsed (summed and upsampled) to reconstruct the final fused image.
+```bash
+just paper-assets
+```
 
-#### 🗂️ Core Files
+Generare il PDF della relazione:
 
-The entire study is presented within the following notebook, which guides the user through loading images, calculating weights, and performing the pyramid-based fusion:
+```bash
+just paper-pdf
+```
 
-* **[`sample.ipynb`](https://github.com/AngeloLongano/exposure_fusion/blob/main/sample.ipynb):** The Jupyter Notebook containing the Python code, intermediate visualizations (like weight maps), and the final fusion results.
+Rigenerare asset e PDF insieme:
 
-***
+```bash
+just paper
+```
 
-### 🏁 Conclusions and Future Work
+## Struttura dell'algoritmo
 
-This project successfully implements the core concepts of the Exposure Fusion paper within a notebook environment.
+L'implementazione segue il nucleo del paper:
 
-However, the work is still in a **refinement phase**. Future steps include:
+1. **Contrasto**: risposta assoluta di un filtro Laplaciano su grayscale.
+2. **Saturazione**: deviazione standard dei canali RGB.
+3. **Well-exposedness**: Gaussiana centrata in `0.5`, applicata ai canali RGB e
+   moltiplicata sui canali.
+4. **Peso finale**:
 
-* Testing and optimizing the graphical finishing and touch-ups of the resulting images.
-* Refactoring the code to define a single,
+   ```text
+   W = C^omega_C * S^omega_S * E^omega_E
+   ```
+
+5. **Normalizzazione pixel-wise** dei pesi lungo la sequenza di immagini.
+6. **Fusione multirisoluzione**:
+   - piramidi Laplaciane per le immagini;
+   - piramidi Gaussiane per i pesi;
+   - blending livello per livello;
+   - collasso della piramide fusa.
+
+## Note sull'uso di Codex
+
+Parte del codice, del refactor del package, della relazione e della
+documentazione e stata sviluppata con supporto di programmazione automatica
+tramite Codex. Le scelte algoritmiche, la verifica dei risultati e
+l'organizzazione finale del progetto sono state revisionate manualmente
+dall'autore.

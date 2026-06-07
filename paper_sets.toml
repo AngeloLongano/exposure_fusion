@@ -58,3 +58,16 @@ comparison_images = [
     "comparison_2.jpg",
     "comparison_3.jpg",
 ]
+
+[[sets]]
+name = "iphone_example"
+title = "iPhone Example"
+kind = "fusion"
+description = "Three-image real-world iPhone exposure sequence captured for validating the algorithm on personal photos."
+input_dir = "images/iphone_example"
+inputs = [
+    "input_dark.jpg",
+    "input_medium.jpg",
+    "input_bright.jpg",
+]
+output_dir = "images/iphone_example/out"

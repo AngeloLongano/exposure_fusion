@@ -2,13 +2,13 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from exposure_fusion.pyramids import (
+from exposure_fusion_core.pyramids import (
     PyramidConfig,
     build_gaussian_pyramid,
     build_laplacian_pyramid,
     collapse_laplacian_pyramid,
 )
-from exposure_fusion.weights import WeightConfig, compute_weight_maps, normalize_weights
+from exposure_fusion_core.weights import WeightConfig, compute_weight_maps, normalize_weights
 
 
 @dataclass

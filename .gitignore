@@ -1,5 +1,6 @@
 AGENTS.md
 .DS_Store
+__pycache__/
 
 # Generated image artifacts.
 images/**/out/

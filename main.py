@@ -1,4 +1,4 @@
-from exposure_fusion.cli import main
+from exposure_fusion_core.cli import main
 
 
 if __name__ == "__main__":

@@ -6,10 +6,10 @@ import sys
 
 import numpy as np
 
-from exposure_fusion import fuse_exposures, load_images, load_rgb_float, save_grayscale_image
-from exposure_fusion.comparison import mean_absolute_error, mean_squared_error
-from exposure_fusion.io import save_rgb_image
-from exposure_fusion.visualization import (
+from exposure_fusion_core import fuse_exposures, load_images, load_rgb_float, save_grayscale_image
+from exposure_fusion_core.comparison import mean_absolute_error, mean_squared_error
+from exposure_fusion_core.io import save_rgb_image
+from exposure_fusion_core.visualization import (
     resize_float_image,
     save_comparison_image,
     save_input_pyramids,
