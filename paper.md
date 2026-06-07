@@ -201,9 +201,8 @@ uv run python main.py \
 ```
 
 I dataset e gli output previsti sono dichiarati in `paper_sets.toml`. I casi
-discussi visivamente nel documento sono `venice_boat` e `living_room_window`;
-il dataset `venice_carnival` è disponibile come ulteriore esempio e viene
-incluso nei controlli numerici.
+discussi visivamente nel documento sono `venice_boat`, `venice_carnival` e
+`living_room_window`.
 
 # Calcolo delle mappe di peso
 
@@ -217,6 +216,14 @@ Il contrasto viene stimato applicando un filtro Laplaciano all'immagine in scala
 di grigi:
 
 ```python
+LAPLACIAN_KERNEL = np.array(
+    [
+        [0.0, 1.0, 0.0],
+        [1.0, -4.0, 1.0],
+        [0.0, 1.0, 0.0],
+    ]
+)
+
 gray = rgb2gray(image)
 contrast = np.abs(convolve(gray, LAPLACIAN_KERNEL, mode="reflect"))
 ```
@@ -225,7 +232,8 @@ La risposta assoluta del Laplaciano evidenzia bordi e variazioni locali. La
 gestione dei bordi usa `mode="reflect"`, quindi i valori vicino ai margini
 dipendono da questa specifica convenzione di convoluzione. Il punto importante
 è che la misura favorisce dettaglio locale; non va interpretata come una
-misura radiometrica della scena.
+misura radiometrica della scena. Il kernel usato è la variante a 4-neighbor,
+non quella a 8-neighbor.
 
 ## Saturazione
 
@@ -271,7 +279,7 @@ weight = (
 
 ![Esposizioni di input per il dataset Venice Boat.](images/venice_boat/out/ldr_preview.jpg){ width=100% }
 
-![Mappe di peso normalizzate per il dataset Venice Boat.](images/venice_boat/out/weights_preview.jpg){ width=100% }
+![Mappe di peso normalizzate per il dataset Venice Boat.](images/venice_boat/out/weights_preview.jpg){ width=105% }
 
 # Normalizzazione dei pesi
 
@@ -316,9 +324,13 @@ collassata per ottenere l'immagine finale.
 Le piramidi sono costruite con funzioni di `scikit-image`: `pyramid_gaussian` e
 `pyramid_expand`. Poiché downsampling e upsampling possono introdurre differenze
 di shape sui bordi, `crop_like` riallinea l'immagine espansa alla shape del
-livello di riferimento. Inoltre, dopo aver costruito le piramidi Gaussiane dei
-pesi, `fuse_exposures` rinormalizza i pesi a ogni livello. Questo riduce piccoli
-drift numerici dovuti al filtraggio e al ridimensionamento.
+livello di riferimento.
+
+Dopo aver costruito le piramidi Gaussiane dei pesi, `fuse_exposures`
+rinormalizza i pesi a ogni livello. Questa è una scelta implementativa aggiunta
+per stabilità numerica: nel paper la normalizzazione è definita prima della
+costruzione delle piramidi, mentre qui viene ripetuta dopo il downsampling per
+ridurre piccoli drift numerici dovuti al filtraggio e al ridimensionamento.
 
 ![Schema di piramidi Gaussiane, piramidi Laplaciane e fusione multiscala.](images/pyramid_blending/out/process_diagram.jpg){ width=95% }
 
@@ -337,7 +349,7 @@ per mostrare come esposizioni differenti contribuiscano a regioni diverse
 dell'immagine finale. La figura seguente confronta il risultato della fusione
 con il riferimento disponibile e con una mappa di differenza assoluta.
 
-![Confronto finale per il dataset Venice Boat.](images/venice_boat/out/comparison.jpg){ width=100% }
+![Confronto finale per il dataset Venice Boat.](images/venice_boat/out/comparison.jpg){ width=105% }
 
 La valutazione resta qualitativa: il riferimento non dimostra una correttezza
 radiometrica assoluta, ma permette di ispezionare visivamente luminosità,
@@ -353,9 +365,9 @@ well-exposedness.
 
 ![Esposizioni di input per il dataset Venice Carnival.](images/venice_carnival/out/ldr_preview.jpg){ width=100% }
 
-![Mappe di peso normalizzate per il dataset Venice Carnival.](images/venice_carnival/out/weights_preview.jpg){ width=100% }
+![Mappe di peso normalizzate per il dataset Venice Carnival.](images/venice_carnival/out/weights_preview.jpg){ width=105% }
 
-![Confronto finale per il dataset Venice Carnival.](images/venice_carnival/out/comparison.jpg){ width=100% }
+![Confronto finale per il dataset Venice Carnival.](images/venice_carnival/out/comparison.jpg){ width=105% }
 
 Nel confronto finale, la fusione conserva il soggetto principale e combina le
 diverse esposizioni per ridurre sia le zone troppo scure sia le regioni troppo
@@ -373,9 +385,9 @@ luminosa.
 
 ![Esposizioni di input per il dataset Living Room Window.](images/living_room_window/out/ldr_preview.jpg){ width=100% }
 
-![Mappe di peso normalizzate per il dataset Living Room Window.](images/living_room_window/out/weights_preview.jpg){ width=100% }
+![Mappe di peso normalizzate per il dataset Living Room Window.](images/living_room_window/out/weights_preview.jpg){ width=105% }
 
-![Confronto finale per il dataset Living Room Window.](images/living_room_window/out/comparison.jpg){ width=100% }
+![Confronto finale per il dataset Living Room Window.](images/living_room_window/out/comparison.jpg){ width=105% }
 
 Le mappe di peso mostrano qualitativamente il ruolo della well-exposedness: le
 esposizioni scure tendono a contribuire nelle alte luci, mentre quelle più
@@ -386,8 +398,11 @@ pixel-wise semplice.
 # Controlli di correttezza
 
 La qualità finale di Exposure Fusion è in parte percettiva, quindi non può
-essere riassunta da una sola metrica numerica. Tuttavia, alcuni controlli
-verificano che la struttura matematica dell'implementazione sia coerente.
+essere riassunta da una sola metrica numerica. I controlli seguenti non
+dimostrano da soli la correttezza visiva del risultato: verificano invece che le
+componenti matematiche dell'implementazione siano coerenti, cioè che i pesi
+siano normalizzati, che le piramidi siano ricostruibili e che le shape dei
+livelli siano compatibili.
 
 ## Normalizzazione
 
@@ -444,7 +459,8 @@ scelte pratiche:
 - la saturazione è stimata come deviazione standard dei canali RGB;
 - la well-exposedness usa una Gaussiana centrata a $0.5$ con `sigma=0.2`;
 - le piramidi sono costruite tramite funzioni di `scikit-image`;
-- i pesi vengono rinormalizzati anche ai livelli piramidali;
+- i pesi vengono rinormalizzati anche ai livelli piramidali, come scelta
+  implementativa per stabilità numerica;
 - l'output finale viene clippato in $[0,1]$ prima del salvataggio;
 - il progetto è orientato allo studio dell'algoritmo, non alla riproduzione
   bit-exact del codice originale.
@@ -462,6 +478,21 @@ influenzare il risultato.
 Infine, Exposure Fusion produce direttamente una immagine LDR. Questo è utile
 quando si vuole evitare la pipeline HDR completa, ma significa che il risultato
 non rappresenta una radiance map fisicamente calibrata della scena.
+
+## Elementi non implementati rispetto al paper
+
+Il paper discute anche estensioni e casi applicativi che non sono stati
+implementati in questo progetto. In particolare, la pipeline non include:
+
+- registrazione automatica o compensazione del movimento tra immagini;
+- gestione dedicata di sequenze flash/no-flash;
+- tuning interattivo degli esponenti $\omega$;
+- una valutazione percettiva sistematica su un numero ampio di dataset;
+- confronto quantitativo con operatori HDR o tone mapping alternativi.
+
+Queste omissioni delimitano il perimetro del progetto: l'obiettivo è riprodurre
+e studiare la pipeline principale di Exposure Fusion, non implementare tutte le
+varianti discusse dagli autori.
 
 # Conclusioni
 
