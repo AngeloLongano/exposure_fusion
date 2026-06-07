@@ -18,15 +18,16 @@ def build_gaussian_pyramid(
     channel_axis: int | None = None,
 ) -> list[np.ndarray]:
     resolved_max_layer = config.max_layer if max_layer is None else max_layer
-    return list(
-        pyramid_gaussian(
+    return [
+        np.asarray(level)
+        for level in pyramid_gaussian(
             image,
             max_layer=resolved_max_layer,
             downscale=config.downscale,
             preserve_range=True,
             channel_axis=channel_axis,
         )
-    )
+    ]
 
 
 def crop_like(image: np.ndarray, reference_shape: tuple[int, ...]) -> np.ndarray:

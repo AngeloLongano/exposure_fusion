@@ -4,16 +4,16 @@ default:
     @just --list
 
 run *args:
-    uv run python main.py {{args}}
+    uv run python main.py {{ args }}
 
 fuse output_dir *inputs:
-    uv run python main.py --inputs {{inputs}} --output-dir {{output_dir}} --save-all
+    uv run python main.py --inputs {{ inputs }} --output-dir {{ output_dir }} --save-all
 
 fuse-ref output_dir reference *inputs:
-    uv run python main.py --inputs {{inputs}} --reference {{reference}} --output-dir {{output_dir}} --save-all
+    uv run python main.py --inputs {{ inputs }} --reference {{ reference }} --output-dir {{ output_dir }} --save-all
 
 process output_dir *inputs:
-    uv run python main.py --inputs {{inputs}} --output-dir {{output_dir}} --only-process --preview
+    uv run python main.py --inputs {{ inputs }} --output-dir {{ output_dir }} --only-process --preview
 
 fuse-venice-boat:
     uv run python main.py \
@@ -74,11 +74,18 @@ process-pyramid-blending:
         --only-process \
         --preview
 
-fuse-set-1:
+paper-assets:
     just fuse-venice-boat
-
-fuse-set-2:
+    just process-venice-boat
     just fuse-venice-carnival
+    just process-venice-carnival
+    just fuse-living-room-window
+    just process-living-room-window
+    just process-pyramid-blending
 
 paper-pdf:
     pandoc paper.md --pdf-engine=xelatex -V documentclass=article -V geometry:margin=2.5cm -o paper.pdf
+
+paper:
+    just paper-assets
+    just paper-pdf
