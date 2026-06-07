@@ -79,3 +79,6 @@ fuse-set-1:
 
 fuse-set-2:
     just fuse-venice-carnival
+
+paper-pdf:
+    pandoc paper.md --pdf-engine=xelatex -V documentclass=article -V geometry:margin=2.5cm -o paper.pdf
