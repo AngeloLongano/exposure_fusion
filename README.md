@@ -14,7 +14,11 @@ Laplaciane, fusione multirisoluzione e ricostruzione dell'immagine finale.
   materiale del paper sono presenti anche le mappe dei pesi di riferimento.
 - `exposure_fusion_core/`: package Python con l'implementazione riusabile.
 - `main.py`: entry point CLI che richiama `exposure_fusion_core.cli`.
+- `sweep_pyramid_layers.py`: script per misurare MAE/MSE al variare della
+  profondita massima della piramide.
 - `paper.md` e `paper.pdf`: relazione tecnica in formato Markdown/PDF.
+- `TEORIA_PROF.md`: appunti teorici dalle dispense del prof per verificare le
+  assunzioni del progetto.
 - `paper_sets.toml`: descrizione dei dataset usati per paper e artefatti.
 - `Justfile`: comandi di sviluppo per rigenerare risultati, asset e PDF.
 
@@ -68,6 +72,20 @@ La CLI salva, a seconda delle opzioni:
 - confronto con riferimento `comparison.jpg`;
 - diagramma del processo `process_diagram.jpg`;
 - anteprime aggregate quando si usa `--preview`.
+
+## Studiare la profondita della piramide
+
+Per confrontare diversi valori di `max_layer` rispetto a una reference:
+
+```bash
+uv run python sweep_pyramid_layers.py \
+  --inputs images/venice_carnival/A.jpg images/venice_carnival/B.jpg images/venice_carnival/C.jpg \
+  --reference images/venice_carnival/result.jpg \
+  --layers 4 6 8 10 -1
+```
+
+Lo script stampa MAE/MSE per ogni valore e indica il layer migliore secondo
+ciascuna metrica. Con `--csv path/to/results.csv` salva anche la tabella.
 
 ## Comandi Just utili
 
@@ -129,10 +147,22 @@ L'implementazione segue il nucleo del paper:
    - blending livello per livello;
    - collasso della piramide fusa.
 
-## Note sull'uso di Codex
+## Copyright e materiali di terze parti
 
-Parte del codice, del refactor del package, della relazione e della
-documentazione e stata sviluppata con supporto di programmazione automatica
-tramite Codex. Le scelte algoritmiche, la verifica dei risultati e
-l'organizzazione finale del progetto sono state revisionate manualmente
-dall'autore.
+Il paper di riferimento **Exposure Fusion** e i relativi contenuti scientifici
+sono opera di Tom Mertens, Jan Kautz e Frank Van Reeth. I file
+`exposure-fusion.pdf` e le immagini tratte o derivate dal materiale del paper
+sono inclusi solo per finalita di studio, confronto e documentazione del
+progetto. Tutti i diritti su paper, figure e dataset originali restano dei
+rispettivi autori, editori o titolari.
+
+Le immagini personali presenti negli esempi `iphone_example/` e
+`iphone_example_2/` sono materiale di progetto usato per validare
+l'implementazione su scatti propri. Gli output generati nelle cartelle `out/`
+sono artefatti derivati prodotti dall'implementazione.
+
+## Nota sull'implementazione
+
+L'implementazione del codice, il refactor del package, la documentazione e parte
+della relazione sono stati sviluppati con assistenza di strumenti di
+programmazione automatica.

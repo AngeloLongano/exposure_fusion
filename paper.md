@@ -195,6 +195,7 @@ uv run python main.py \
            images/venice_boat/image3.jpg \
   --output-dir images/venice_boat/out \
   --reference images/venice_boat/result.jpg \
+  --pyramid-max-layer 8 \
   --save-all \
   --save-process \
   --preview
@@ -334,6 +335,36 @@ ridurre piccoli drift numerici dovuti al filtraggio e al ridimensionamento.
 
 ![Schema di piramidi Gaussiane, piramidi Laplaciane e fusione multiscala.](images/pyramid_blending/out/process_diagram.jpg){ width=95% }
 
+# Scelta della profondità della piramide
+
+La profondità della piramide influenza il risultato finale: una piramide troppo
+corta combina soprattutto dettagli locali, mentre una piramide completa scende
+fino a scale molto grossolane e può introdurre differenze globali di luminosità
+rispetto ai riferimenti disponibili. Per questo motivo è stata eseguita una
+analisi di sensibilità sul parametro `max_layer`.
+
+Per ogni dataset con riferimento, lo script `sweep_pyramid_layers.py` prova
+diversi valori di `max_layer`, genera la fusione e calcola MAE e MSE rispetto
+alla reference. Il valore `-1` indica la piramide completa fino alla scala
+minima permessa da `scikit-image`. Questa procedura non identifica un parametro
+universalmente ottimo: misura quale profondità approssima meglio il riferimento
+per il singolo dataset.
+
+| Dataset | `max_layer` completo | MAE completo | MSE completo | `max_layer` scelto | MAE scelto | MSE scelto |
+|---|---:|---:|---:|---:|---:|---:|
+| `venice_boat` | -1 | 0.067872 | 0.007582 | 8 | 0.025263 | 0.001097 |
+| `venice_carnival` | -1 | 0.092841 | 0.011839 | 8 | 0.031380 | 0.001622 |
+| `living_room_window` | -1 | 0.115918 | 0.020146 | 6 | 0.049332 | 0.003852 |
+
+Gli asset finali del paper sono stati rigenerati usando questi valori:
+`max_layer=8` per `venice_boat`, `max_layer=8` per `venice_carnival` e
+`max_layer=6` per `living_room_window`. L'esempio personale
+`iphone_example_2`, non incluso nelle figure principali, ha invece ottenuto la
+metrica migliore con la piramide completa (`max_layer=-1`), confermando che il
+parametro dipende dal contenuto dell'immagine e dalla reference usata. Gli
+stessi valori sono riportati anche in `paper_sets.toml`, insieme agli input e
+alle reference dei dataset.
+
 # Dataset e risultati
 
 Gli esperimenti documentati nel paper usano tre dataset di fusione
@@ -341,7 +372,9 @@ Gli esperimenti documentati nel paper usano tre dataset di fusione
 supporto per spiegare la costruzione delle piramidi (`pyramid_blending`). La
 configurazione in `paper_sets.toml` contiene anche esempi personali opzionali
 non discussi nella relazione. Gli output sono salvati nelle rispettive cartelle
-`out/`, in modo da mantenere separati input originali e artefatti generati.
+`out/`, in modo da mantenere separati input originali e artefatti generati. Le
+figure mostrate usano la profondità di piramide scelta tramite l'analisi
+quantitativa precedente.
 
 ## Venice Boat
 
@@ -420,9 +453,9 @@ livelli Gaussiani.
 
 | Dataset | Livelli | Errore pesi iniziali | Errore pesi piramidali |
 |---|---:|---:|---:|
-| `venice_boat` | 12 | $3.331 \cdot 10^{-16}$ | $2.220 \cdot 10^{-16}$ |
-| `living_room_window` | 10 | $3.331 \cdot 10^{-16}$ | $3.331 \cdot 10^{-16}$ |
-| `venice_carnival` | 12 | $3.331 \cdot 10^{-16}$ | $2.220 \cdot 10^{-16}$ |
+| `venice_boat` | 9 | $3.331 \cdot 10^{-16}$ | $2.220 \cdot 10^{-16}$ |
+| `living_room_window` | 7 | $3.331 \cdot 10^{-16}$ | $3.331 \cdot 10^{-16}$ |
+| `venice_carnival` | 9 | $3.331 \cdot 10^{-16}$ | $2.220 \cdot 10^{-16}$ |
 
 ## Ricostruzione della piramide Laplaciana
 
@@ -438,7 +471,7 @@ Sulla prima immagine di ciascun dataset, l'errore massimo di ricostruzione è:
 | Dataset | Errore massimo di ricostruzione |
 |---|---:|
 | `venice_boat` | $3.331 \cdot 10^{-16}$ |
-| `living_room_window` | $3.331 \cdot 10^{-16}$ |
+| `living_room_window` | $1.665 \cdot 10^{-16}$ |
 | `venice_carnival` | $2.220 \cdot 10^{-16}$ |
 
 ## Coerenza delle shape
@@ -511,10 +544,13 @@ i pesi sono normalizzati, che le piramidi Laplaciane sono ricostruibili entro la
 precisione floating point e che i livelli piramidali hanno shape compatibili.
 
 Il risultato è una pipeline semplice, ispezionabile e coerente con il metodo di
-Mertens, Kautz e Van Reeth. Possibili sviluppi futuri includono test
-automatici, analisi quantitativa su più dataset, registrazione delle immagini
-per sequenze non perfettamente allineate e studio sistematico dell'effetto degli
-esponenti $\omega$ sulla qualità finale.
+Mertens, Kautz e Van Reeth. L'analisi del parametro `max_layer` mostra inoltre
+che la profondità della piramide ha un effetto misurabile su MAE e MSE e che
+conviene trattarla come scelta sperimentale legata al dataset, non come costante
+universale. Possibili sviluppi futuri includono test automatici, analisi
+quantitativa su più dataset, registrazione delle immagini per sequenze non
+perfettamente allineate e studio sistematico dell'effetto degli esponenti
+$\omega$ sulla qualità finale.
 
 # Riferimenti
 

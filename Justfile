@@ -19,6 +19,7 @@ fuse-venice-boat:
     uv run python main.py \
         --inputs images/venice_boat/image1.jpg images/venice_boat/image2.jpg images/venice_boat/image3.jpg \
         --reference images/venice_boat/result.jpg \
+        --pyramid-max-layer 8 \
         --output-dir images/venice_boat/out \
         --save-all \
         --preview
@@ -26,14 +27,25 @@ fuse-venice-boat:
 process-venice-boat:
     uv run python main.py \
         --inputs images/venice_boat/image1.jpg images/venice_boat/image2.jpg images/venice_boat/image3.jpg \
+        --pyramid-max-layer 8 \
         --output-dir images/venice_boat/out \
         --only-process \
         --preview
+
+sweep-venice-boat:
+    uv run python sweep_pyramid_layers.py \
+        --inputs images/venice_boat/image1.jpg images/venice_boat/image2.jpg images/venice_boat/image3.jpg \
+        --reference images/venice_boat/result.jpg \
+        --min-layer 1 \
+        --max-layer 12 \
+        --include-full \
+        --csv images/venice_boat/out/pyramid_layers.csv
 
 fuse-venice-carnival:
     uv run python main.py \
         --inputs images/venice_carnival/A.jpg images/venice_carnival/B.jpg images/venice_carnival/C.jpg \
         --reference images/venice_carnival/result.jpg \
+        --pyramid-max-layer 8 \
         --output-dir images/venice_carnival/out \
         --save-all \
         --preview
@@ -41,14 +53,25 @@ fuse-venice-carnival:
 process-venice-carnival:
     uv run python main.py \
         --inputs images/venice_carnival/A.jpg images/venice_carnival/B.jpg images/venice_carnival/C.jpg \
+        --pyramid-max-layer 8 \
         --output-dir images/venice_carnival/out \
         --only-process \
         --preview
+
+sweep-venice-carnival:
+    uv run python sweep_pyramid_layers.py \
+        --inputs images/venice_carnival/A.jpg images/venice_carnival/B.jpg images/venice_carnival/C.jpg \
+        --reference images/venice_carnival/result.jpg \
+        --min-layer 1 \
+        --max-layer 12 \
+        --include-full \
+        --csv images/venice_carnival/out/pyramid_layers.csv
 
 fuse-living-room-window:
     uv run python main.py \
         --inputs images/living_room_window/input_1_dark.jpg images/living_room_window/input_2_medium_dark.jpg images/living_room_window/input_3_medium_bright.jpg images/living_room_window/input_4_bright.jpg \
         --reference images/living_room_window/paper_fused.jpg \
+        --pyramid-max-layer 6 \
         --output-dir images/living_room_window/out \
         --save-all \
         --preview
@@ -56,38 +79,65 @@ fuse-living-room-window:
 process-living-room-window:
     uv run python main.py \
         --inputs images/living_room_window/input_1_dark.jpg images/living_room_window/input_2_medium_dark.jpg images/living_room_window/input_3_medium_bright.jpg images/living_room_window/input_4_bright.jpg \
+        --pyramid-max-layer 6 \
         --output-dir images/living_room_window/out \
         --only-process \
         --preview
 
+sweep-living-room-window:
+    uv run python sweep_pyramid_layers.py \
+        --inputs images/living_room_window/input_1_dark.jpg images/living_room_window/input_2_medium_dark.jpg images/living_room_window/input_3_medium_bright.jpg images/living_room_window/input_4_bright.jpg \
+        --reference images/living_room_window/paper_fused.jpg \
+        --min-layer 1 \
+        --max-layer 12 \
+        --include-full \
+        --csv images/living_room_window/out/pyramid_layers.csv
+
 fuse-iphone-example:
+    @echo "immagini troppo grandi da visualizzare a terminale"
     uv run python main.py \
         --inputs images/iphone_example/input_dark.jpg images/iphone_example/input_medium.jpg  images/iphone_example/input_bright.jpg \
         --output-dir images/iphone_example/out \
-        --save-all \
-        --preview
+        --save-all
 
 process-iphone-example:
+    @echo "immagini troppo grandi da visualizzare a terminale"
     uv run python main.py \
         --inputs images/iphone_example/input_dark.jpg images/iphone_example/input_medium.jpg  images/iphone_example/input_bright.jpg \
         --output-dir images/iphone_example/out \
-        --only-process \
-        --preview
+        --only-process
 
 fuse-iphone-example-2:
+    @echo "immagini troppo grandi da visualizzare a terminale"
     uv run python main.py \
         --inputs images/iphone_example_2/input_dark.jpg images/iphone_example_2/input_medium.jpg  images/iphone_example_2/input_bright.jpg \
         --output-dir images/iphone_example_2/out \
         --reference images/iphone_example_2/original_hdr.jpg \
-        --save-all \
-        --preview
+        --pyramid-max-layer -1 \
+        --save-all
 
 process-iphone-example-2:
+    @echo "immagini troppo grandi da visualizzare a terminale"
     uv run python main.py \
         --inputs images/iphone_example_2/input_dark.jpg images/iphone_example_2/input_medium.jpg  images/iphone_example_2/input_bright.jpg \
+        --pyramid-max-layer -1 \
         --output-dir images/iphone_example_2/out \
-        --only-process \
-        --preview
+        --only-process
+
+sweep-iphone-example-2:
+    uv run python sweep_pyramid_layers.py \
+        --inputs images/iphone_example_2/input_dark.jpg images/iphone_example_2/input_medium.jpg images/iphone_example_2/input_bright.jpg \
+        --reference images/iphone_example_2/original_hdr.jpg \
+        --min-layer 1 \
+        --max-layer 12 \
+        --include-full \
+        --csv images/iphone_example_2/out/pyramid_layers.csv
+
+sweep-all:
+    just sweep-venice-boat
+    just sweep-venice-carnival
+    just sweep-living-room-window
+    just sweep-iphone-example-2
 
 pyramids-pyramid-blending:
     uv run python main.py \

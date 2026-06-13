@@ -11,6 +11,7 @@ inputs = [
 ]
 reference = "result.jpg"
 output_dir = "images/venice_boat/out"
+max_layer = 8
 
 [[sets]]
 name = "venice_carnival"
@@ -25,6 +26,7 @@ inputs = [
 ]
 reference = "result.jpg"
 output_dir = "images/venice_carnival/out"
+max_layer = 8
 
 [[sets]]
 name = "pyramid_blending"
@@ -53,6 +55,7 @@ inputs = [
 ]
 reference = "paper_fused.jpg"
 output_dir = "images/living_room_window/out"
+max_layer = 6
 comparison_images = [
     "comparison_1.jpg",
     "comparison_2.jpg",
@@ -71,3 +74,18 @@ inputs = [
     "input_bright.jpg",
 ]
 output_dir = "images/iphone_example/out"
+
+[[sets]]
+name = "iphone_example_2"
+title = "iPhone Example 2"
+kind = "fusion"
+description = "Three-image iPhone exposure sequence with a reference HDR-style output, used for sensitivity checks outside the paper figures."
+input_dir = "images/iphone_example_2"
+inputs = [
+    "input_dark.jpg",
+    "input_medium.jpg",
+    "input_bright.jpg",
+]
+reference = "original_hdr.jpg"
+output_dir = "images/iphone_example_2/out"
+max_layer = -1

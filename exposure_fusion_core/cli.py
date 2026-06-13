@@ -9,6 +9,7 @@ import numpy as np
 from exposure_fusion_core import fuse_exposures, load_images, load_rgb_float, save_grayscale_image
 from exposure_fusion_core.comparison import mean_absolute_error, mean_squared_error
 from exposure_fusion_core.io import save_rgb_image
+from exposure_fusion_core.pyramids import PyramidConfig
 from exposure_fusion_core.visualization import (
     resize_float_image,
     save_comparison_image,
@@ -40,6 +41,15 @@ def parse_args() -> Namespace:
         "--reference",
         type=Path,
         help="Optional reference image used for visual and numeric comparison.",
+    )
+    parser.add_argument(
+        "--pyramid-max-layer",
+        type=int,
+        default=PyramidConfig().max_layer,
+        help=(
+            "Maximum Gaussian/Laplacian pyramid layer. "
+            "Use -1 for a full pyramid down to the smallest possible scale."
+        ),
     )
     parser.add_argument(
         "--save-ldr",
@@ -99,6 +109,7 @@ def save_requested_artifacts(
     images: list[np.ndarray],
     result,
     reference: np.ndarray | None,
+    pyramid_config: PyramidConfig,
 ) -> None:
     save_all = args.save_all
     output_dir = args.output_dir
@@ -124,7 +135,12 @@ def save_requested_artifacts(
         )
 
     if args.save_pyramids:
-        save_input_pyramids(images, args.inputs, output_dir)
+        save_input_pyramids(
+            images,
+            args.inputs,
+            output_dir,
+            pyramid_config=pyramid_config,
+        )
 
     if args.save_process:
         save_process_diagram(images, args.inputs, result, output_dir / "process_diagram.jpg")
@@ -135,6 +151,7 @@ def preview_paths(
     images: list[np.ndarray],
     result,
     reference: np.ndarray | None,
+    pyramid_config: PyramidConfig,
 ) -> list[Path]:
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -149,7 +166,14 @@ def preview_paths(
     paths.append(weights_preview_path)
 
     if args.save_pyramids:
-        paths.extend(save_input_pyramids(images, args.inputs, args.output_dir))
+        paths.extend(
+            save_input_pyramids(
+                images,
+                args.inputs,
+                args.output_dir,
+                pyramid_config=pyramid_config,
+            )
+        )
 
     if args.save_process:
         process_path = args.output_dir / "process_diagram.jpg"
@@ -198,9 +222,15 @@ def main() -> None:
     args = parse_args()
 
     images = load_images(args.inputs)
+    pyramid_config = PyramidConfig(max_layer=args.pyramid_max_layer)
 
     if args.only_pyramids:
-        paths = save_input_pyramids(images, args.inputs, args.output_dir)
+        paths = save_input_pyramids(
+            images,
+            args.inputs,
+            args.output_dir,
+            pyramid_config=pyramid_config,
+        )
         print(f"Inputs: {len(images)}")
         print(f"Output directory: {args.output_dir}")
         print(f"Saved pyramid visualizations: {len(paths)}")
@@ -216,7 +246,7 @@ def main() -> None:
         )
         reference = resize_float_image(reference, images[0].shape)
 
-    result = fuse_exposures(images)
+    result = fuse_exposures(images, pyramid_config=pyramid_config)
 
     if args.only_process:
         path = args.output_dir / "process_diagram.jpg"
@@ -228,7 +258,7 @@ def main() -> None:
             show_inline_previews([path])
         return
 
-    save_requested_artifacts(args, images, result, reference)
+    save_requested_artifacts(args, images, result, reference, pyramid_config)
 
     print(f"Inputs: {len(images)}")
     print(f"Output directory: {args.output_dir}")
@@ -243,4 +273,4 @@ def main() -> None:
         print(f"MSE vs reference: {mean_squared_error(result.fused_image, reference):.6f}")
 
     if args.preview:
-        show_inline_previews(preview_paths(args, images, result, reference))
+        show_inline_previews(preview_paths(args, images, result, reference, pyramid_config))

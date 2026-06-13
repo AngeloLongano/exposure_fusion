@@ -3,7 +3,11 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-from exposure_fusion_core.pyramids import build_gaussian_pyramid, build_laplacian_pyramid
+from exposure_fusion_core.pyramids import (
+    PyramidConfig,
+    build_gaussian_pyramid,
+    build_laplacian_pyramid,
+)
 
 
 def normalized_for_display(image: np.ndarray) -> np.ndarray:
@@ -279,6 +283,8 @@ def save_input_pyramids(
     images: list[np.ndarray],
     input_paths: list[Path],
     output_dir: Path,
+    *,
+    pyramid_config: PyramidConfig = PyramidConfig(),
 ) -> list[Path]:
     pyramid_dir = output_dir / "pyramids"
     paths = []
@@ -288,13 +294,13 @@ def save_input_pyramids(
         laplacian_path = pyramid_dir / f"{input_path.stem}_laplacian_pyramid.jpg"
 
         save_pyramid_sheet(
-            build_gaussian_pyramid(image, channel_axis=-1),
+            build_gaussian_pyramid(image, config=pyramid_config, channel_axis=-1),
             gaussian_path,
             title=f"{input_path.stem} Gaussian",
             display_mode="gaussian",
         )
         save_pyramid_sheet(
-            build_laplacian_pyramid(image),
+            build_laplacian_pyramid(image, config=pyramid_config),
             laplacian_path,
             title=f"{input_path.stem} Laplacian",
             display_mode="laplacian",
@@ -309,9 +315,14 @@ def save_comparison_image(
     fused_image: np.ndarray,
     reference: np.ndarray,
     path: Path,
+    *,
+    difference_vmax: float = 0.25,
 ) -> None:
+    if difference_vmax <= 0:
+        raise ValueError("difference_vmax must be positive.")
+
     difference = np.abs(fused_image - reference).mean(axis=2)
-    difference_display = normalized_for_display(difference)
+    difference_display = difference / difference_vmax
 
     save_horizontal_sheet(
         [
