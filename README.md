@@ -22,9 +22,6 @@ Laplaciane, fusione multirisoluzione e ricostruzione dell'immagine finale.
 - `paper_sets.toml`: descrizione dei dataset usati per paper e artefatti.
 - `Justfile`: comandi di sviluppo per rigenerare risultati, asset e PDF.
 
-I notebook storici `sample.ipynb` ed `exposure_fusion_clean.ipynb`, se presenti,
-sono materiale intermedio e non sono l'entry point consigliato.
-
 ## Setup
 
 Il progetto usa `uv` per gestire ambiente e dipendenze.
