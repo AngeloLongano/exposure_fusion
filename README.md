@@ -14,7 +14,7 @@ Laplaciane, fusione multirisoluzione e ricostruzione dell'immagine finale.
   materiale del paper sono presenti anche le mappe dei pesi di riferimento.
 - `exposure_fusion_core/`: package Python con l'implementazione riusabile.
 - `main.py`: entry point CLI che richiama `exposure_fusion_core.cli`.
-- `sweep_pyramid_layers.py`: script per misurare MAE/MSE al variare della
+- `scripts/sweep_pyramid_layers.py`: script per misurare MAE/MSE al variare della
   profondita massima della piramide.
 - `paper.md` e `paper.pdf`: relazione tecnica in formato Markdown/PDF.
 - `TEORIA_PROF.md`: appunti teorici dalle dispense del prof per verificare le
@@ -75,7 +75,7 @@ La CLI salva, a seconda delle opzioni:
 Per confrontare diversi valori di `max_layer` rispetto a una reference:
 
 ```bash
-uv run python sweep_pyramid_layers.py \
+uv run python -m scripts.sweep_pyramid_layers \
   --inputs images/venice_carnival/A.jpg images/venice_carnival/B.jpg images/venice_carnival/C.jpg \
   --reference images/venice_carnival/result.jpg \
   --layers 4 6 8 10 -1

@@ -33,7 +33,7 @@ process-venice-boat:
         --preview
 
 sweep-venice-boat:
-    uv run python sweep_pyramid_layers.py \
+    uv run python -m scripts.sweep_pyramid_layers \
         --inputs images/venice_boat/image1.jpg images/venice_boat/image2.jpg images/venice_boat/image3.jpg \
         --reference images/venice_boat/result.jpg \
         --min-layer 1 \
@@ -59,7 +59,7 @@ process-venice-carnival:
         --preview
 
 sweep-venice-carnival:
-    uv run python sweep_pyramid_layers.py \
+    uv run python -m scripts.sweep_pyramid_layers \
         --inputs images/venice_carnival/A.jpg images/venice_carnival/B.jpg images/venice_carnival/C.jpg \
         --reference images/venice_carnival/result.jpg \
         --min-layer 1 \
@@ -85,7 +85,7 @@ process-living-room-window:
         --preview
 
 sweep-living-room-window:
-    uv run python sweep_pyramid_layers.py \
+    uv run python -m scripts.sweep_pyramid_layers \
         --inputs images/living_room_window/input_1_dark.jpg images/living_room_window/input_2_medium_dark.jpg images/living_room_window/input_3_medium_bright.jpg images/living_room_window/input_4_bright.jpg \
         --reference images/living_room_window/paper_fused.jpg \
         --min-layer 1 \
@@ -125,7 +125,7 @@ process-iphone-example-2:
         --only-process
 
 sweep-iphone-example-2:
-    uv run python sweep_pyramid_layers.py \
+    uv run python -m scripts.sweep_pyramid_layers \
         --inputs images/iphone_example_2/input_dark.jpg images/iphone_example_2/input_medium.jpg images/iphone_example_2/input_bright.jpg \
         --reference images/iphone_example_2/original_hdr.jpg \
         --min-layer 1 \

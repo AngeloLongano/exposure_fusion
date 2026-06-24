@@ -343,7 +343,7 @@ fino a scale molto grossolane e può introdurre differenze globali di luminosit�
 rispetto ai riferimenti disponibili. Per questo motivo è stata eseguita una
 analisi di sensibilità sul parametro `max_layer`.
 
-Per ogni dataset con riferimento, lo script `sweep_pyramid_layers.py` prova
+Per ogni dataset con riferimento, lo script `scripts/sweep_pyramid_layers.py` prova
 diversi valori di `max_layer`, genera la fusione e calcola MAE e MSE rispetto
 alla reference. Il valore `-1` indica la piramide completa fino alla scala
 minima permessa da `scikit-image`. Questa procedura non identifica un parametro
