@@ -50,7 +50,7 @@ Studi di Modena e Reggio Emilia (Unimore).
 
 {\large\bfseries Angelo Longano\\[0.15cm]}
 {\large Laurea Magistrale in Informatica - Unimore\\[0.15cm]}
-{\large 7 giugno 2026}
+{\large 25 giugno 2026}
 
 \vspace*{0.8cm}
 \end{titlepage}
@@ -79,7 +79,7 @@ codice Python e risultati visivi.
 Una singola immagine LDR (*Low Dynamic Range*) non è sempre sufficiente per
 rappresentare scene con alto range dinamico. In presenza di regioni molto scure
 e molto luminose, una sola esposizione tende a perdere informazione: le ombre
-possono risultare sottoesposte, mentre le alte luci possono essere saturate.
+possono risultare sottoesposte, mentre le alte luci possono essere clippate.
 
 La fotografia HDR classica affronta il problema acquisendo una sequenza di
 esposizioni e stimando una rappresentazione radiometrica della scena. Questa
@@ -90,9 +90,9 @@ tone mapping:
 bracketed exposures -> HDR reconstruction -> tone mapping -> display image
 ```
 
-Exposure Fusion propone una pipeline più diretta. Invece di stimare la
-luminanza fisica della scena, assegna pesi locali ai pixel delle immagini LDR e
-li combina in una immagine finale:
+Exposure Fusion propone una pipeline più diretta. Invece di stimare una
+radiance map o una rappresentazione radiometrica HDR della scena, assegna pesi
+locali ai pixel delle immagini LDR e li combina in una immagine finale:
 
 ```text
 bracketed exposures -> weight maps -> multiresolution blending -> display image
@@ -116,7 +116,7 @@ quanto quel pixel sia adatto a contribuire al risultato finale.
 Per ogni pixel $(i,j)$ dell'immagine $k$, vengono calcolate tre misure:
 
 - **contrasto**, che favorisce bordi, texture e variazioni locali;
-- **saturazione**, che favorisce colori non sbiaditi;
+- **saturazione cromatica**, che favorisce colori non sbiaditi;
 - **well-exposedness**, che favorisce valori di intensità intermedi.
 
 Le tre misure vengono combinate tramite prodotto:
@@ -128,10 +128,10 @@ W_{i,j,k}
   E_{i,j,k}^{\omega_E}
 $$
 
-dove $C$, $S$ ed $E$ indicano contrasto, saturazione e well-exposedness, mentre
-gli esponenti $\omega_C$, $\omega_S$ e $\omega_E$ controllano l'importanza
-relativa delle componenti. Nell'implementazione di default tutti gli esponenti
-valgono $1.0$.
+dove $C$, $S$ ed $E$ indicano contrasto, saturazione cromatica e
+well-exposedness, mentre gli esponenti $\omega_C$, $\omega_S$ e $\omega_E$
+controllano l'importanza relativa delle componenti. Nell'implementazione di
+default tutti gli esponenti valgono $1.0$.
 
 I pesi grezzi vengono poi normalizzati lungo la sequenza:
 
@@ -157,9 +157,14 @@ $$
 
 Questa forma è semplice, ma può produrre transizioni innaturali quando le mappe
 di peso cambiano bruscamente o quando le esposizioni hanno luminosità globali
-molto diverse. Per ridurre questi artefatti, il paper combina le immagini in
-multirisoluzione: le immagini vengono decomposte in piramidi Laplaciane, i pesi
-in piramidi Gaussiane, e la fusione avviene livello per livello.
+molto diverse. In questa sola formulazione diretta, la normalizzazione dei pesi
+rende la combinazione pixel-wise convessa rispetto ai valori RGB di input. Il
+risultato multirisoluzione usato nel progetto non è però semplicemente questa
+media locale: fonde coefficienti Laplaciani a scale diverse e poi collassa la
+piramide risultante. Per ridurre gli artefatti, infatti, il paper combina le
+immagini in multirisoluzione: le immagini vengono decomposte in piramidi
+Laplaciane, i pesi in piramidi Gaussiane, e la fusione avviene livello per
+livello.
 
 # Struttura dell'implementazione
 
@@ -169,7 +174,7 @@ e implementazione.
 
 | Concetto | Ruolo nell'algoritmo | Implementazione |
 |---|---|---|
-| Misure di qualità | Contrasto, saturazione, well-exposedness | `exposure_fusion_core/weights.py`, `quality_measures` |
+| Misure di qualità | Contrasto, saturazione cromatica, well-exposedness | `exposure_fusion_core/weights.py`, `quality_measures` |
 | Formula dei pesi | Prodotto $C^{\omega_C} S^{\omega_S} E^{\omega_E}$ | `weight_map` |
 | Normalizzazione | Somma pixel-wise dei pesi pari a 1 | `normalize_weights` |
 | Piramidi | Decomposizione Gaussiana e Laplaciana | `exposure_fusion_core/pyramids.py` |
@@ -177,11 +182,15 @@ e implementazione.
 
 L'interfaccia principale è `fuse_exposures`. La funzione riceve una lista di
 immagini RGB con la stessa shape, caricate come array NumPy in virgola mobile
-con valori in $[0,1]$, e restituisce una struttura `ExposureFusionResult`.
-Questa struttura contiene l'immagine finale, ma anche pesi grezzi, pesi
-normalizzati, piramidi delle immagini, piramidi dei pesi e piramide Laplaciana
-fusa. La scelta rende la pipeline ispezionabile e utile per uno studio
-didattico dell'algoritmo.
+con valori in $[0,1]$, e restituisce una struttura `ExposureFusionResult`. I
+JPEG vengono quindi trattati come valori RGB display-referred già pronti per
+l'elaborazione: il codice non linearizza sRGB, non applica una gamma inversa e
+non gestisce profili colore. Questa scelta è coerente con l'obiettivo didattico
+del progetto, ma va distinta da una pipeline radiometricamente calibrata. La
+struttura contiene l'immagine finale, ma anche pesi grezzi, pesi normalizzati,
+piramidi delle immagini, piramidi dei pesi e piramide Laplaciana fusa. La
+scelta rende la pipeline ispezionabile e utile per uno studio didattico
+dell'algoritmo.
 
 L'entry point `main.py` permette di eseguire la pipeline da riga di comando e di
 salvare artefatti intermedi, come input LDR, mappe di peso, confronto con un
@@ -236,9 +245,9 @@ dipendono da questa specifica convenzione di convoluzione. Il punto importante
 misura radiometrica della scena. Il kernel usato è la variante a 4-neighbor,
 non quella a 8-neighbor.
 
-## Saturazione
+## Saturazione cromatica
 
-La saturazione viene stimata come deviazione standard dei canali RGB:
+La saturazione cromatica viene stimata come deviazione standard dei canali RGB:
 
 ```python
 saturation = np.std(image, axis=2)
@@ -247,7 +256,9 @@ saturation = np.std(image, axis=2)
 Questa è una proxy semplice e locale. Un pixel con canali simili tende ad avere
 bassa saturazione; un pixel con canali più differenziati tende ad avere una
 risposta maggiore. Non si tratta di un modello percettivo completo della
-saturazione colore.
+saturazione colore. Il termine non va confuso con il clipping delle alte luci:
+nel contesto delle mappe di peso, "saturazione" indica solo la differenziazione
+cromatica tra i canali RGB.
 
 ## Well-exposedness
 
@@ -345,8 +356,13 @@ analisi di sensibilità sul parametro `max_layer`.
 
 Per ogni dataset con riferimento, lo script `scripts/sweep_pyramid_layers.py` prova
 diversi valori di `max_layer`, genera la fusione e calcola MAE e MSE rispetto
-alla reference. Il valore `-1` indica la piramide completa fino alla scala
-minima permessa da `scikit-image`. Questa procedura non identifica un parametro
+alla reference scelta. MAE e MSE sono quindi distanze numeriche dal riferimento
+disponibile, non misure di ground truth radiometrica, qualità percettiva
+assoluta o correttezza HDR. Questa analisi è una procedura sperimentale del
+progetto e non fa parte del metodo originale di Mertens et al. Il valore `-1`
+indica la piramide completa fino alla scala minima permessa da `scikit-image`;
+con `max_layer=N`, invece, `scikit-image` può produrre fino a `N+1` livelli,
+includendo il livello originale. Questa procedura non identifica un parametro
 universalmente ottimo: misura quale profondità approssima meglio il riferimento
 per il singolo dataset.
 
@@ -364,6 +380,24 @@ metrica migliore con la piramide completa (`max_layer=-1`), confermando che il
 parametro dipende dal contenuto dell'immagine e dalla reference usata. Gli
 stessi valori sono riportati anche in `paper_sets.toml`, insieme agli input e
 alle reference dei dataset.
+
+Le metriche della tabella precedente sono calcolate su `fused_image`, cioè sul
+risultato già clippato in $[0,1]$ da `fuse_exposures`. Questo è coerente con le
+immagini salvate e confrontate visivamente, ma può nascondere overshoot o
+undershoot presenti nella fusione grezza `fused_raw`. Per questo sono riportati
+anche il range del risultato grezzo, la percentuale di pixel che subiscono
+clipping e la percentuale di pixel in cui la normalizzazione dei pesi iniziali
+usa il fallback uniforme.
+
+| Dataset | Livelli | `raw_min` | `raw_max` | Pixel clippati | Fallback uniforme | Reference ridimensionata |
+|---|---:|---:|---:|---:|---:|---|
+| `venice_boat` | 9 | -0.296183 | 1.224675 | 5.493507% | 3.316354% | no |
+| `venice_carnival` | 9 | -0.316631 | 1.510505 | 1.945486% | 2.462604% | no |
+| `living_room_window` | 7 | -0.220163 | 1.273979 | 1.102675% | 5.245679% | sì |
+
+Per `living_room_window` la reference ha dimensioni diverse dagli input e viene
+ridimensionata alla shape della sequenza prima del confronto; i valori numerici
+vanno quindi letti come indicativi.
 
 # Dataset e risultati
 
@@ -387,15 +421,18 @@ con il riferimento disponibile e con una mappa di differenza assoluta.
 
 La valutazione resta qualitativa: il riferimento non dimostra una correttezza
 radiometrica assoluta, ma permette di ispezionare visivamente luminosità,
-contrasto e differenze locali.
+contrasto e differenze locali. Nelle figure di confronto, la mappa di
+differenza mostra la media del valore assoluto sui tre canali RGB e viene
+visualizzata con `difference_vmax=0.25`: differenze pari o superiori a `0.25`
+nella scala $[0,1]$ vengono quindi clippate nella visualizzazione.
 
 ## Venice Carnival
 
 `venice_carnival` contiene tre esposizioni di una scena con un soggetto in
 maschera in Piazza San Marco. Rispetto a `venice_boat`, il caso presenta colori
-più saturi e regioni con texture più evidenti; per questo è utile per
-ispezionare il comportamento combinato di saturazione, contrasto e
-well-exposedness.
+cromaticamente più saturi e regioni con texture più evidenti; per questo è
+utile per ispezionare il comportamento combinato di saturazione cromatica,
+contrasto e well-exposedness.
 
 ![Esposizioni di input per il dataset Venice Carnival.](images/venice_carnival/out/ldr_preview.jpg){ width=100% }
 
@@ -429,14 +466,14 @@ chiare contribuiscono nelle aree interne. La fusione multirisoluzione combina
 questi contributi cercando transizioni più regolari rispetto a una fusione
 pixel-wise semplice.
 
-# Controlli di correttezza
+# Controlli numerici
 
 La qualità finale di Exposure Fusion è in parte percettiva, quindi non può
 essere riassunta da una sola metrica numerica. I controlli seguenti non
-dimostrano da soli la correttezza visiva del risultato: verificano invece che le
-componenti matematiche dell'implementazione siano coerenti, cioè che i pesi
-siano normalizzati, che le piramidi siano ricostruibili e che le shape dei
-livelli siano compatibili.
+dimostrano da soli la correttezza visiva o percettiva del risultato: verificano
+invece la coerenza numerica e implementativa, cioè che i pesi siano
+normalizzati, che le piramidi siano ricostruibili e che le shape dei livelli
+siano compatibili.
 
 ## Normalizzazione
 
@@ -456,6 +493,11 @@ livelli Gaussiani.
 | `venice_boat` | 9 | $3.331 \cdot 10^{-16}$ | $2.220 \cdot 10^{-16}$ |
 | `living_room_window` | 7 | $3.331 \cdot 10^{-16}$ | $3.331 \cdot 10^{-16}$ |
 | `venice_carnival` | 9 | $3.331 \cdot 10^{-16}$ | $2.220 \cdot 10^{-16}$ |
+
+Il fallback uniforme nella normalizzazione iniziale dei pesi non è un errore:
+si attiva nei pixel in cui la somma dei pesi grezzi è nulla o inferiore alla
+soglia numerica `eps=1e-12`. Nei dataset principali la sua incidenza è quella
+riportata nella tabella delle statistiche sul risultato scelto.
 
 ## Ricostruzione della piramide Laplaciana
 
@@ -488,14 +530,21 @@ L'implementazione segue la struttura principale del metodo, ma include alcune
 scelte pratiche:
 
 - le immagini sono rappresentate come array NumPy RGB in $[0,1]$;
+- i JPEG sono trattati come immagini display-referred, senza linearizzazione
+  sRGB, gamma inversa o gestione dei profili colore;
 - il contrasto usa un kernel Laplaciano discreto con gestione dei bordi
   `reflect`;
-- la saturazione è stimata come deviazione standard dei canali RGB;
+- la saturazione cromatica è stimata come deviazione standard dei canali RGB;
 - la well-exposedness usa una Gaussiana centrata a $0.5$ con `sigma=0.2`;
-- le piramidi sono costruite tramite funzioni di `scikit-image`;
+- le piramidi sono costruite tramite funzioni di `scikit-image`, quindi
+  downsampling, upsampling e gestione dei bordi non sono garantiti bit-exact
+  rispetto ai filtri piramidali originali Burt-Adelson usati come riferimento
+  teorico;
 - i pesi vengono rinormalizzati anche ai livelli piramidali, come scelta
   implementativa per stabilità numerica;
-- l'output finale viene clippato in $[0,1]$ prima del salvataggio;
+- `fuse_exposures` clippa per default l'output finale in $[0,1]$ dentro
+  `fused_image`, mentre `save_rgb_image` applica un ulteriore clipping prima
+  del salvataggio;
 - il progetto è orientato allo studio dell'algoritmo, non alla riproduzione
   bit-exact del codice originale.
 
@@ -545,10 +594,12 @@ precisione floating point e che i livelli piramidali hanno shape compatibili.
 
 Il risultato è una pipeline semplice, ispezionabile e coerente con il metodo di
 Mertens, Kautz e Van Reeth. L'analisi del parametro `max_layer` mostra inoltre
-che la profondità della piramide ha un effetto misurabile su MAE e MSE e che
-conviene trattarla come scelta sperimentale legata al dataset, non come costante
-universale. Possibili sviluppi futuri includono test automatici, analisi
-quantitativa su più dataset, registrazione delle immagini per sequenze non
+che la profondità della piramide ha un effetto misurabile su MAE e MSE rispetto
+alle reference disponibili e che conviene trattarla come scelta sperimentale
+legata al dataset, non come costante universale né come parte prescritta dal
+paper originale. Possibili sviluppi futuri includono test automatici, analisi
+quantitativa su più dataset, metriche complementari come SSIM e PSNR senza
+trattarle come giudizi definitivi, registrazione delle immagini per sequenze non
 perfettamente allineate e studio sistematico dell'effetto degli esponenti
 $\omega$ sulla qualità finale.
 
