@@ -3,9 +3,35 @@
 Repository per lo studio e l'implementazione in Python dell'algoritmo
 **Exposure Fusion** di Tom Mertens, Jan Kautz e Frank Van Reeth.
 
-L'obiettivo e mostrare il procedimento algoritmico in modo esplicito: calcolo
-delle mappe di peso, normalizzazione, costruzione delle piramidi Gaussiane e
-Laplaciane, fusione multirisoluzione e ricostruzione dell'immagine finale.
+Il progetto prende una sequenza di immagini LDR acquisite con esposizioni
+diverse e produce una singola immagine LDR fusa, senza ricostruire una radiance
+map HDR, senza stimare la Camera Response Function e senza applicare tone
+mapping esplicito. L'obiettivo e mostrare il procedimento in modo ispezionabile:
+calcolo delle mappe di peso, normalizzazione, piramidi Gaussiane e Laplaciane,
+fusione multirisoluzione e ricostruzione finale.
+
+## Esempio
+
+Una sequenza di esposizioni contiene informazioni diverse: le immagini piu
+scure conservano meglio le alte luci, mentre quelle piu chiare rendono visibili
+le zone in ombra.
+
+![Input LDR del dataset Venice Boat](images/readme_example/venice_boat_inputs.jpg)
+
+Exposure Fusion assegna a ogni immagine una mappa di peso basata su contrasto,
+saturazione cromatica e well-exposedness.
+
+![Mappe di peso normalizzate](images/readme_example/venice_boat_weights.jpg)
+
+Le immagini vengono poi fuse in multirisoluzione usando piramidi Laplaciane per
+le immagini e piramidi Gaussiane per i pesi.
+
+![Schema del processo di fusione](images/readme_example/process_diagram.jpg)
+
+Il risultato finale viene confrontato con una reference disponibile solo come
+controllo qualitativo e numerico, non come ground truth radiometrica.
+
+![Confronto tra fusione, reference e difference map](images/readme_example/venice_boat_comparison.jpg)
 
 ## File principali
 
@@ -14,11 +40,9 @@ Laplaciane, fusione multirisoluzione e ricostruzione dell'immagine finale.
   materiale del paper sono presenti anche le mappe dei pesi di riferimento.
 - `exposure_fusion_core/`: package Python con l'implementazione riusabile.
 - `main.py`: entry point CLI che richiama `exposure_fusion_core.cli`.
-- `scripts/sweep_pyramid_layers.py`: script per misurare MAE/MSE al variare della
-  profondita massima della piramide.
+- `scripts/sweep_pyramid_layers.py`: script per misurare MAE/MSE al variare
+  della profondita massima della piramide.
 - `paper.md` e `paper.pdf`: relazione tecnica in formato Markdown/PDF.
-- `TEORIA_PROF.md`: appunti teorici dalle dispense del prof per verificare le
-  assunzioni del progetto.
 - `paper_sets.toml`: descrizione dei dataset usati per paper e artefatti.
 - `Justfile`: comandi di sviluppo per rigenerare risultati, asset e PDF.
 
@@ -35,7 +59,7 @@ uv sync
 Per generare `paper.pdf` servono anche `pandoc` e una distribuzione LaTeX con
 `xelatex` disponibile nel `PATH`.
 
-## Eseguire il notebook
+## Notebook
 
 Per aprire il notebook principale:
 
@@ -47,7 +71,7 @@ Il notebook e pensato per essere letto ed eseguito dall'inizio alla fine. Le
 funzioni principali sono riscritte dentro il notebook per rendere chiaro il
 percorso implementativo, invece di usare il package come black box.
 
-## Eseguire l'implementazione da CLI
+## CLI
 
 Esempio diretto su `venice_carnival`:
 
@@ -56,6 +80,7 @@ uv run python main.py \
   --inputs images/venice_carnival/A.jpg images/venice_carnival/B.jpg images/venice_carnival/C.jpg \
   --reference images/venice_carnival/result.jpg \
   --output-dir images/venice_carnival/out \
+  --pyramid-max-layer 8 \
   --save-all \
   --save-process \
   --preview
@@ -70,21 +95,7 @@ La CLI salva, a seconda delle opzioni:
 - diagramma del processo `process_diagram.jpg`;
 - anteprime aggregate quando si usa `--preview`.
 
-## Studiare la profondita della piramide
-
-Per confrontare diversi valori di `max_layer` rispetto a una reference:
-
-```bash
-uv run python -m scripts.sweep_pyramid_layers \
-  --inputs images/venice_carnival/A.jpg images/venice_carnival/B.jpg images/venice_carnival/C.jpg \
-  --reference images/venice_carnival/result.jpg \
-  --layers 4 6 8 10 -1
-```
-
-Lo script stampa MAE/MSE per ogni valore e indica il layer migliore secondo
-ciascuna metrica. Con `--csv path/to/results.csv` salva anche la tabella.
-
-## Comandi Just utili
+## Comandi Just
 
 Elenco completo:
 
@@ -105,30 +116,42 @@ just fuse-living-room-window
 just process-living-room-window
 ```
 
-Rigenerare tutte le immagini necessarie al PDF:
+Analisi della profondita della piramide:
+
+```bash
+just sweep-venice-carnival
+just sweep-venice-boat
+just sweep-living-room-window
+```
+
+Rigenerazione degli asset e della relazione:
 
 ```bash
 just paper-assets
-```
-
-Generare il PDF della relazione:
-
-```bash
 just paper-pdf
-```
-
-Rigenerare asset e PDF insieme:
-
-```bash
 just paper
 ```
+
+## Sweep manuale di `max_layer`
+
+Per confrontare diversi valori di `max_layer` rispetto a una reference:
+
+```bash
+uv run python -m scripts.sweep_pyramid_layers \
+  --inputs images/venice_carnival/A.jpg images/venice_carnival/B.jpg images/venice_carnival/C.jpg \
+  --reference images/venice_carnival/result.jpg \
+  --layers 4 6 8 10 -1
+```
+
+Lo script stampa MAE/MSE per ogni valore e indica il layer migliore secondo
+ciascuna metrica. Con `--csv path/to/results.csv` salva anche la tabella.
 
 ## Struttura dell'algoritmo
 
 L'implementazione segue il nucleo del paper:
 
 1. **Contrasto**: risposta assoluta di un filtro Laplaciano su grayscale.
-2. **Saturazione**: deviazione standard dei canali RGB.
+2. **Saturazione cromatica**: deviazione standard dei canali RGB.
 3. **Well-exposedness**: Gaussiana centrata in `0.5`, applicata ai canali RGB e
    moltiplicata sui canali.
 4. **Peso finale**:
@@ -144,7 +167,7 @@ L'implementazione segue il nucleo del paper:
    - blending livello per livello;
    - collasso della piramide fusa.
 
-## Copyright e materiali di terze parti
+## Crediti e materiali di terze parti
 
 Il paper di riferimento **Exposure Fusion** e i relativi contenuti scientifici
 sono opera di Tom Mertens, Jan Kautz e Frank Van Reeth. I file
